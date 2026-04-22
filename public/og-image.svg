@@ -1,0 +1,42 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" role="img" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#0a1628"/>
+  <line x1="0" y1="210" x2="1200" y2="210" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+  <line x1="0" y1="420" x2="1200" y2="420" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+  <line x1="400" y1="0" x2="400" y2="630" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+  <line x1="800" y1="0" x2="800" y2="630" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+  <rect x="0" y="0" width="1200" height="6" fill="#d0021b"/>
+  <circle cx="96" cy="290" r="32" fill="none" stroke="#d0021b" stroke-width="3"/>
+  <circle cx="96" cy="290" r="8" fill="#d0021b"/>
+  <line x1="96" y1="250" x2="96" y2="270" stroke="#d0021b" stroke-width="3"/>
+  <line x1="96" y1="310" x2="96" y2="330" stroke="#d0021b" stroke-width="3"/>
+  <line x1="56" y1="290" x2="76" y2="290" stroke="#d0021b" stroke-width="3"/>
+  <line x1="116" y1="290" x2="136" y2="290" stroke="#d0021b" stroke-width="3"/>
+  <text x="150" y="305" font-family="Arial, sans-serif" font-size="72" font-weight="800" fill="#ffffff" letter-spacing="-2">FREIGHTWATCH</text>
+  <text x="152" y="350" font-family="'Courier New', monospace" font-size="28" font-weight="600" fill="#d0021b" letter-spacing="2">.news</text>
+  <rect x="80" y="400" width="480" height="2" fill="#d0021b" opacity="0.6"/>
+  <text x="80" y="445" font-family="Arial, sans-serif" font-size="26" font-weight="400" fill="#aaaaaa" letter-spacing="1">Daily freight market intelligence</text>
+  <text x="80" y="490" font-family="Arial, sans-serif" font-size="22" font-weight="400" fill="#666666" letter-spacing="0.5">Trucking · Ports · Air Cargo · Rail · Markets</text>
+  <g opacity="0.15">
+    <rect x="820" y="480" width="40" height="80" fill="#ffffff" rx="2"/>
+    <rect x="875" y="420" width="40" height="140" fill="#ffffff" rx="2"/>
+    <rect x="930" y="390" width="40" height="170" fill="#ffffff" rx="2"/>
+    <rect x="985" y="340" width="40" height="220" fill="#ffffff" rx="2"/>
+    <rect x="1040" y="300" width="40" height="260" fill="#ffffff" rx="2"/>
+    <rect x="1095" y="350" width="40" height="210" fill="#ffffff" rx="2"/>
+  </g>
+  <polyline points="840,460 895,400 950,370 1005,310 1060,270 1115,320" fill="none" stroke="#d0021b" stroke-width="3" stroke-opacity="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="840" cy="460" r="5" fill="#d0021b" opacity="0.6"/>
+  <circle cx="895" cy="400" r="5" fill="#d0021b" opacity="0.6"/>
+  <circle cx="950" cy="370" r="5" fill="#d0021b" opacity="0.6"/>
+  <circle cx="1005" cy="310" r="5" fill="#d0021b" opacity="0.6"/>
+  <circle cx="1060" cy="270" r="5" fill="#d0021b" opacity="0.6"/>
+  <circle cx="1115" cy="320" r="5" fill="#d0021b" opacity="0.6"/>
+  <text x="820" y="100" font-family="'Courier New', monospace" font-size="18" fill="#1a7a3f" opacity="0.7">FDX  ▲2.4%</text>
+  <text x="820" y="130" font-family="'Courier New', monospace" font-size="18" fill="#d0021b" opacity="0.7">UPS  ▼0.8%</text>
+  <text x="820" y="160" font-family="'Courier New', monospace" font-size="18" fill="#1a7a3f" opacity="0.7">XPO  ▲1.2%</text>
+  <text x="820" y="190" font-family="'Courier New', monospace" font-size="18" fill="#1a7a3f" opacity="0.7">ODFL ▲0.5%</text>
+  <text x="820" y="220" font-family="'Courier New', monospace" font-size="18" fill="#d0021b" opacity="0.7">CHRW ▼1.1%</text>
+  <rect x="0" y="570" width="1200" height="60" fill="#ffffff" fill-opacity="0.03"/>
+  <text x="80" y="606" font-family="'Courier New', monospace" font-size="16" fill="#444444" letter-spacing="2">freightwatch.news</text>
+  <text x="1120" y="606" font-family="'Courier New', monospace" font-size="16" fill="#444444" text-anchor="end">FREIGHT INTELLIGENCE</text>
+</svg>
