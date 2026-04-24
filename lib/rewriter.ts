@@ -7,6 +7,8 @@
 // - Frontend reads from Blobs — no AI calls on page load
 
 import { Article, Category } from './feeds';
+import { fetchFullArticle } from './articleFetcher';
+import { runQualityControl } from './qualityControl';
 
 export interface FreightwatchArticle {
   id:          string;
@@ -93,14 +95,15 @@ export function slugify(title: string): string {
 }
 
 // ── Rewrite a single article ─────────────────────────────────────
-export async function rewriteArticle(article: Article): Promise<FreightwatchArticle | null> {
+// fullText is the full article body from fetchFullArticle; falls back to RSS summary.
+export async function rewriteArticle(article: Article, fullText?: string): Promise<FreightwatchArticle | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
 
   try {
-    const sourceText = article.summary
+    const sourceText = fullText || (article.summary
       ? `${article.title}. ${article.summary}`
-      : article.title;
+      : article.title);
 
     const prompt = `You are a senior editor at Freightwatch.news. Rewrite this freight/logistics news as original Freightwatch reporting.
 
@@ -113,7 +116,7 @@ Rules:
 - 100-150 words for body
 - Year is ${new Date().getFullYear()}
 
-Source: ${sourceText.slice(0, 800)}
+Source: ${sourceText.slice(0, 2000)}
 
 Return only valid JSON:
 {"title":"original headline","body":"article body 100-150 words","summary":"one sentence","importance":5}`;
@@ -198,17 +201,31 @@ export async function processNextArticle(rssArticles: Article[]): Promise<{
     return { processed: false, category: '', title: null, total: published.length };
   }
 
-  // Rewrite the article
   console.log(`[rewriter] Processing: [${foundCategory}] ${found.title.slice(0, 60)}`);
-  const rewritten = await rewriteArticle(found);
 
-  // Mark as processed regardless of success
+  // Fetch full article text — falls back to RSS summary on paywall/error
+  const fallback = found.summary ? `${found.title}. ${found.summary}` : found.title;
+  const { text: sourceText } = await fetchFullArticle(found.url, fallback);
+
+  // Rewrite using the richest available source text
+  const rewritten = await rewriteArticle(found, sourceText);
+
+  // Mark as processed regardless of rewrite/QC outcome
   processedUrls.add(found.url);
 
+  let publishedTitle: string | null = null;
+
   if (rewritten) {
-    // Add to published list (newest first)
-    published.unshift(rewritten);
-    console.log(`[rewriter] Published: ${rewritten.title}`);
+    const qcResult = await runQualityControl(rewritten, sourceText);
+
+    if (qcResult.status === 'rejected') {
+      console.log(`[rewriter] QC rejected: ${qcResult.reason}`);
+    } else {
+      const toPublish = qcResult.status === 'corrected' ? qcResult.article : rewritten;
+      published.unshift(toPublish);
+      publishedTitle = toPublish.title;
+      console.log(`[rewriter] Published (QC: ${qcResult.status}): ${toPublish.title}`);
+    }
   }
 
   // Advance category rotation and save everything
@@ -222,7 +239,7 @@ export async function processNextArticle(rssArticles: Article[]): Promise<{
   return {
     processed: true,
     category:  foundCategory,
-    title:     rewritten?.title || null,
+    title:     publishedTitle,
     total:     published.length,
   };
 }

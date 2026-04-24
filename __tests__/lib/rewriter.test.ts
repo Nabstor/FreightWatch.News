@@ -178,6 +178,26 @@ describe('rewriteArticle — core pipeline', () => {
     expect(result!.title).toBe('Test Title');
   });
 
+  it('uses the provided fullText over the RSS summary in the prompt', async () => {
+    process.env.ANTHROPIC_API_KEY = 'test-key';
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        content: [{ text: JSON.stringify({ title: 'Title', body: 'Body.', summary: 'S.', importance: 5 }) }],
+      }),
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const fullText = 'Full article body with rich details about carrier capacity constraints and rate surcharges.';
+    await rewriteArticle(makeArticle(), fullText);
+
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body.messages[0].content).toContain('Full article body with rich details');
+    // Should NOT fall back to the short RSS summary
+    expect(body.messages[0].content).not.toContain('Diesel fuel prices rose 8%');
+  });
+
   it('uses title as sourceText when summary is empty', async () => {
     process.env.ANTHROPIC_API_KEY = 'test-key';
 
@@ -197,14 +217,29 @@ describe('rewriteArticle — core pipeline', () => {
   });
 });
 
-// ── processNextArticle — category rotation ────────────────────────
+// ── processNextArticle — full pipeline (fetch → rewrite → QC → publish) ──
 
-describe('processNextArticle — category rotation', () => {
+describe('processNextArticle', () => {
   const articles: Article[] = [
-    makeArticle({ url: 'https://example.com/t1', category: 'trucking',    title: 'Truck freight load carrier driver article' }),
-    makeArticle({ url: 'https://example.com/p1', category: 'ports',       title: 'Port ship container maritime cargo article' }),
-    makeArticle({ url: 'https://example.com/a1', category: 'air-cargo',   title: 'Air cargo freight aviation IATAarticle' }),
+    makeArticle({ url: 'https://example.com/t1', category: 'trucking', title: 'Truck freight load carrier driver article' }),
+    makeArticle({ url: 'https://example.com/p1', category: 'ports',    title: 'Port ship container maritime cargo article' }),
   ];
+
+  const FULL_ARTICLE_HTML = `<p>${'Diesel fuel prices surged this week as refinery utilization declined. '.repeat(10)}</p>`;
+
+  // Helper: build a fetch mock that routes article-URL calls to text() and Anthropic calls to json()
+  const makeMockFetch = (anthropicResponses: object[]) => {
+    let anthropicCall = 0;
+    return vi.fn().mockImplementation((url: string) => {
+      if (url.includes('anthropic.com')) {
+        const resp = anthropicResponses[anthropicCall] ?? anthropicResponses[anthropicResponses.length - 1];
+        anthropicCall++;
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(resp) });
+      }
+      // fetchFullArticle call — return real HTML so full:true path is exercised
+      return Promise.resolve({ ok: true, text: () => Promise.resolve(FULL_ARTICLE_HTML) });
+    });
+  };
 
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -213,31 +248,23 @@ describe('processNextArticle — category rotation', () => {
     vi.resetModules();
   });
 
-  it('returns processed:false when no API key is set', async () => {
-    delete process.env.ANTHROPIC_API_KEY;
-
-    // rewriteArticle returns null → processNextArticle still marks processed true
-    // but with title null
+  it('marks processed:true with title null when rewrite fails (malformed JSON)', async () => {
     process.env.ANTHROPIC_API_KEY = 'test-key';
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ content: [{ text: 'invalid json' }] }),
-    }));
+    vi.stubGlobal('fetch', makeMockFetch([
+      { content: [{ text: 'not json' }] }, // rewrite fails
+    ]));
 
     const result = await processNextArticle(articles);
     expect(result.processed).toBe(true);
     expect(result.title).toBeNull();
   });
 
-  it('returns processed:true and a title on successful rewrite', async () => {
+  it('publishes the rewritten article and returns its title on success', async () => {
     process.env.ANTHROPIC_API_KEY = 'test-key';
-
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        content: [{ text: JSON.stringify({ title: 'Rewritten Title', body: 'Body.', summary: 'S.', importance: 5 }) }],
-      }),
-    }));
+    vi.stubGlobal('fetch', makeMockFetch([
+      { content: [{ text: JSON.stringify({ title: 'Rewritten Title', body: 'Body.', summary: 'S.', importance: 5 }) }] }, // rewrite
+      { content: [{ text: JSON.stringify({ decision: 'pass', reason: 'Accurate.' }) }] }, // QC pass
+    ]));
 
     const result = await processNextArticle(articles);
     expect(result.processed).toBe(true);
@@ -245,22 +272,60 @@ describe('processNextArticle — category rotation', () => {
     expect(result.total).toBeGreaterThan(0);
   });
 
+  it('uses the full article HTML in the rewrite prompt when fetchFullArticle succeeds', async () => {
+    process.env.ANTHROPIC_API_KEY = 'test-key';
+    const mockFetch = makeMockFetch([
+      { content: [{ text: JSON.stringify({ title: 'Title', body: 'Body.', summary: 'S.', importance: 5 }) }] },
+      { content: [{ text: JSON.stringify({ decision: 'pass', reason: 'OK.' }) }] },
+    ]);
+    vi.stubGlobal('fetch', mockFetch);
+
+    await processNextArticle(articles);
+
+    // Find the rewrite Anthropic call (first anthropic call)
+    const anthropicCalls = mockFetch.mock.calls.filter(([url]: [string]) => url.includes('anthropic.com'));
+    const rewriteBody = JSON.parse(anthropicCalls[0][1].body);
+    // Prompt should contain text from the full HTML, not just the short RSS summary
+    expect(rewriteBody.messages[0].content).toContain('Diesel fuel prices surged');
+  });
+
+  it('does not publish a QC-rejected article (title is null, total unchanged)', async () => {
+    process.env.ANTHROPIC_API_KEY = 'test-key';
+    vi.stubGlobal('fetch', makeMockFetch([
+      { content: [{ text: JSON.stringify({ title: 'Hallucinated Article', body: 'Bad body.', summary: 'S.', importance: 5 }) }] }, // rewrite
+      { content: [{ text: JSON.stringify({ decision: 'rejected', reason: 'Contains hallucinated rate of 25%.', correctedTitle: '', correctedBody: '' }) }] }, // QC rejects
+    ]));
+
+    const result = await processNextArticle(articles);
+    expect(result.processed).toBe(true);
+    expect(result.title).toBeNull(); // rejected → not published
+    expect(result.total).toBe(0);
+  });
+
+  it('publishes the QC-corrected title when QC returns corrected decision', async () => {
+    process.env.ANTHROPIC_API_KEY = 'test-key';
+    vi.stubGlobal('fetch', makeMockFetch([
+      { content: [{ text: JSON.stringify({ title: 'Original Rewrite Title', body: 'Draft body.', summary: 'S.', importance: 5 }) }] }, // rewrite
+      { content: [{ text: JSON.stringify({ decision: 'corrected', reason: 'Shortened sentence.', correctedTitle: 'QC Fixed Title', correctedBody: 'Corrected body.' }) }] }, // QC corrects
+    ]));
+
+    const result = await processNextArticle(articles);
+    expect(result.processed).toBe(true);
+    expect(result.title).toBe('QC Fixed Title');
+    expect(result.total).toBeGreaterThan(0);
+  });
+
   it('returns processed:false and empty category when all articles are already processed', async () => {
     process.env.ANTHROPIC_API_KEY = 'test-key';
+    vi.stubGlobal('fetch', makeMockFetch([
+      { content: [{ text: JSON.stringify({ title: 'T', body: 'B.', summary: 'S.', importance: 5 }) }] },
+      { content: [{ text: JSON.stringify({ decision: 'pass', reason: 'OK.' }) }] },
+    ]));
 
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({
-        content: [{ text: JSON.stringify({ title: 'T', body: 'B.', summary: 'S.', importance: 5 }) }],
-      }),
-    }));
-
-    // Process all articles once to mark them
     for (const article of articles) {
       await processNextArticle([article]);
     }
 
-    // Now all should be processed; empty array = nothing left
     const result = await processNextArticle([]);
     expect(result.processed).toBe(false);
     expect(result.category).toBe('');
