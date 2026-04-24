@@ -13,7 +13,7 @@ interface HeaderProps {
 
 export function Header({ active, onChange, search, onSearch }: HeaderProps) {
   const [showSearch, setShowSearch] = useState(false);
-  const navCats = Object.entries(CATEGORIES).filter(([k]) => k !== 'breaking');
+  const navCats = Object.entries(CATEGORIES).filter(([k]) => k !== 'breaking' && k !== 'market-rates');
 
   return (
     <header style={{ borderBottom: '1px solid #e2e2e2', background: '#fff', position: 'sticky', top: 0, zIndex: 50, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
@@ -22,15 +22,15 @@ export function Header({ active, onChange, search, onSearch }: HeaderProps) {
       <div className="max-w-screen-xl mx-auto px-4 md:px-6" style={{ height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
         <Logo />
 
-        {/* Desktop: Analysis + Search */}
+        {/* Desktop: Market Intel + Search */}
         <div className="hidden md:flex items-center gap-3">
           <Link
-            href="/analysis"
+            href="/market-intel"
             style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '11px', fontWeight: 700, color: '#fff', background: '#0a1628', padding: '6px 14px', letterSpacing: '0.05em', textDecoration: 'none' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#d0021b')}
             onMouseLeave={e => (e.currentTarget.style.background = '#0a1628')}
           >
-            Analysis
+            Market Intel
           </Link>
           <div style={{ position: 'relative' }}>
             <svg style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#999', width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -46,10 +46,10 @@ export function Header({ active, onChange, search, onSearch }: HeaderProps) {
           </div>
         </div>
 
-        {/* Mobile: Analysis + Search icon only */}
+        {/* Mobile: Market Intel + Search icon only */}
         <div className="flex md:hidden items-center gap-2">
-          <Link href="/analysis" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '9px', fontWeight: 700, color: '#fff', background: '#0a1628', padding: '4px 8px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
-            Analysis
+          <Link href="/market-intel" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '9px', fontWeight: 700, color: '#fff', background: '#0a1628', padding: '4px 8px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            Market Intel
           </Link>
           <button onClick={() => setShowSearch(!showSearch)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -78,7 +78,6 @@ export function Header({ active, onChange, search, onSearch }: HeaderProps) {
         <div style={{ display: 'flex', alignItems: 'center', whiteSpace: 'nowrap', padding: '0 16px', minWidth: 'max-content' }}>
           {(['all', ...navCats.map(([k]) => k)] as (Category | 'all')[]).map(key => {
             const label = key === 'all' ? 'All News' : CATEGORIES[key as Category]?.label;
-            const isMarketIntel = key === 'market-rates';
             const isActive = active === key;
             const baseStyle = {
               padding: '9px 12px',
@@ -93,15 +92,7 @@ export function Header({ active, onChange, search, onSearch }: HeaderProps) {
               flexShrink: 0,
             };
 
-            return isMarketIntel ? (
-              <a
-                key={key}
-                href="/market-intel"
-                style={{ ...baseStyle, textDecoration: 'none', display: 'inline-block' }}
-              >
-                {label}
-              </a>
-            ) : (
+            return (
               <button
                 key={key}
                 onClick={() => onChange(key)}
@@ -111,6 +102,27 @@ export function Header({ active, onChange, search, onSearch }: HeaderProps) {
               </button>
             );
           })}
+
+          {/* Analysis — last tab, links to its own page */}
+          <a
+            href="/analysis"
+            style={{
+              padding: '9px 12px',
+              fontSize: '11px',
+              fontWeight: 700,
+              fontFamily: "'Inter', sans-serif",
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              borderBottom: '2px solid transparent',
+              color: '#888',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              textDecoration: 'none',
+              display: 'inline-block',
+            }}
+          >
+            Analysis
+          </a>
         </div>
       </div>
     </header>
