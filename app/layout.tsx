@@ -43,19 +43,28 @@ export const metadata: Metadata = {
   },
 };
 
+const FONT_URL = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        {/* Preconnect for speed */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://query1.finance.yahoo.com" />
         <link rel="preconnect" href="https://www.googletagmanager.com" />
+        {/* Non-render-blocking font load */}
+        <link rel="preload" href={FONT_URL} as="style" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+          href={FONT_URL}
           rel="stylesheet"
+          media="print"
+          // @ts-ignore — onLoad on link is valid HTML, not in React types
+          onLoad="this.media='all'"
         />
+        <noscript>
+          <link href={FONT_URL} rel="stylesheet" />
+        </noscript>
         {/* Structured data — NewsMediaOrganization */}
         <script
           type="application/ld+json"
@@ -78,7 +87,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {children}
-        {/* Google Analytics GA4 — loads after page is interactive */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-23ZQK2LKSF"
           strategy="afterInteractive"

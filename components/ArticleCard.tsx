@@ -34,7 +34,7 @@ function AISummary({ summary }: { summary?: string }) {
   );
 }
 
-function ArticleImage({ url, size = 'hero' }: { url?: string; size?: 'hero' | 'grid' | 'thumb' }) {
+function ArticleImage({ url, size = 'hero', title }: { url?: string; size?: 'hero' | 'grid' | 'thumb'; title?: string }) {
   const [failed, setFailed] = useState(false);
   if (!url || failed) return null;
   const styles: Record<string, React.CSSProperties> = {
@@ -42,19 +42,30 @@ function ArticleImage({ url, size = 'hero' }: { url?: string; size?: 'hero' | 'g
     grid:  { width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block', marginBottom: '8px', background: '#f0f0f0' },
     thumb: { width: '72px', height: '52px', objectFit: 'cover', flexShrink: 0, background: '#f0f0f0' },
   };
-  return <img src={url} alt="" loading="lazy" decoding="async" style={styles[size]} onError={() => setFailed(true)} />;
+  const isHero = size === 'hero';
+  return (
+    <img
+      src={url}
+      alt={title || ''}
+      loading={isHero ? 'eager' : 'lazy'}
+      fetchPriority={isHero ? 'high' : 'auto'}
+      decoding={isHero ? 'sync' : 'async'}
+      style={styles[size]}
+      onError={() => setFailed(true)}
+    />
+  );
 }
 
 const metaStyle: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: '6px',
-  fontFamily: "'Inter', sans-serif", fontSize: '12px', color: '#999',
+  fontFamily: "'Inter', sans-serif", fontSize: '12px', color: '#767676',
 };
 
 // ── HERO ─────────────────────────────────────────────────────────
 export function HeroCard({ article }: { article: Article }) {
   return (
     <a href={article.url} target="_blank" rel="noopener noreferrer" className="card-hover" style={{ display: 'block', textDecoration: 'none' }}>
-      <ArticleImage url={article.imageUrl} size="hero" />
+      <ArticleImage url={article.imageUrl} size="hero" title={article.title} />
       <Tag category={article.category} isBreaking={article.isBreaking} />
       <div className="summary-hover" style={{ position: 'relative' }}>
         <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '22px', fontWeight: 700, lineHeight: 1.3, color: '#111', marginBottom: '8px' }}>

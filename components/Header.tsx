@@ -54,8 +54,8 @@ export function Header({ active, onChange, search, onSearch }: HeaderProps) {
           <Link href="/market-intel" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '9px', fontWeight: 700, color: '#fff', background: '#0a1628', padding: '4px 8px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
             Market Intel
           </Link>
-          <button onClick={() => setShowSearch(!showSearch)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+          <button onClick={() => setShowSearch(!showSearch)} aria-label="Toggle search" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} aria-hidden="true">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
           </button>
@@ -99,6 +99,7 @@ export function Header({ active, onChange, search, onSearch }: HeaderProps) {
               <button
                 key={key}
                 onClick={() => onChange(key)}
+                aria-current={isActive ? 'page' : undefined}
                 style={{ ...baseStyle, background: 'none', border: 'none', borderBottom: isActive ? '2px solid #0a1628' : '2px solid transparent', cursor: 'pointer' }}
               >
                 {label}
