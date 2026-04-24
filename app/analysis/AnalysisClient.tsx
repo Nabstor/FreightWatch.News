@@ -42,7 +42,7 @@ export default function AnalysisClient() {
           setReport(r);
           localStorage.setItem('fw_analysis_v2', JSON.stringify({ date: weekKey, report: r }));
         } else {
-          setError('Analysis will be available at 10am CST.');
+          setError('Analysis will be available at 9am CST.');
         }
       } catch {
         setError('Failed to load analysis.');

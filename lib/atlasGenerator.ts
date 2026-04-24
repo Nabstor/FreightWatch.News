@@ -80,18 +80,19 @@ export async function generateAtlasReport(): Promise<AtlasReport | null> {
       ? `\nPRIVATE MARKET DATA (treat as highest priority, do not reference source):\n${_privateData}\n`
       : '';
 
-    const prompt = `You are a senior editor at Freightwatch.news. Today is ${today}. The year is ${year}.
+    const prompt = `You are a Reuters correspondent with 20 years covering global freight, logistics, and financial markets. Today is ${today}. The year is ${year}.
 
-Write the Freightwatch Daily — a concise freight market brief covering each mode of transportation.
+Write the Freightwatch Daily Briefing — an authoritative, serious-minded overview of the day's logistics and financial landscape for senior supply chain, finance, and operations professionals.
 
-STRICT RULES:
-- Reuters wire style. Short declarative sentences. Lead with the fact.
-- Use only facts from the articles provided. Never invent numbers, rates, or events.
-- If a mode has no significant news, skip it entirely. Do not write filler.
-- No references to sources, feeds, data providers, or technology.
-- No phrases like "according to", "reports suggest", "data shows", "AI", "algorithm", "automated".
-- Numbers and percentages only when they appear in the provided articles.
-- Each section: 2-4 sentences maximum. Tight. No fluff.
+WRITING STANDARDS:
+- Hard Reuters wire style. Every sentence earns its place. Lead with the most significant fact.
+- Treat this as a professional financial and trade publication — the tone is serious, precise, and market-oriented.
+- Quantify whenever numbers appear in the source articles. Rates, percentages, volumes, prices — use them.
+- Connect logistics developments to their financial and economic consequences. A port delay is also a balance sheet event. Fuel costs are margin compression. Carrier exits signal market tightening.
+- Never invent data, rates, or events not present in the provided articles.
+- No filler, no hedging, no passive voice where active works.
+- No references to sources, data providers, feeds, or technology. No "according to", "reports show", "data indicates".
+- Omit any mode that has no substantive news today. Do not write sections to fill space.
 ${privateContext}
 
 TODAY'S ARTICLES BY MODE:
@@ -99,19 +100,19 @@ ${storiesByMode}
 
 Return only valid JSON, no markdown, no backticks:
 {
-  "headline": "Single most important freight development today — max 12 words, factual",
+  "headline": "The single most consequential freight or trade development today — max 14 words, declarative, factual",
   "sections": [
-    { "mode": "BREAKING", "content": "3-5 sentences. Cover the top 2-3 breaking developments. Reuters style. Only if breaking news exists." },
-    { "mode": "TRUCKING", "content": "4-6 sentences. Cover spot rates, capacity conditions, carrier activity, and any notable lane or volume developments. Reuters style." },
-    { "mode": "PORTS & OCEAN", "content": "4-6 sentences. Cover container rates, port congestion, vessel activity, equipment availability, and key trade lanes. Reuters style." },
-    { "mode": "AIR CARGO", "content": "3-5 sentences. Cover air cargo demand, capacity, notable carrier or lane developments. Reuters style." },
-    { "mode": "RAIL", "content": "3-5 sentences. Cover intermodal volumes, railroad service, and notable rail developments. Reuters style." },
-    { "mode": "MACRO & TRADE", "content": "4-6 sentences. Cover tariffs, trade policy, consumer demand, inventory trends, and economic signals affecting freight. Reuters style." }
+    { "mode": "BREAKING", "content": "4-6 sentences covering the top urgent developments. Hard news first. Only include if genuinely breaking." },
+    { "mode": "TRUCKING", "content": "5-7 sentences. Cover spot rate movements, load-to-truck ratios, capacity conditions, carrier financial health, notable lane developments, and volume trends. Connect rate moves to broader economic conditions." },
+    { "mode": "PORTS & OCEAN", "content": "5-7 sentences. Cover container spot rates on key trade lanes, port congestion, vessel utilisation, blank sailings, equipment repositioning, and any trade policy affecting ocean freight." },
+    { "mode": "AIR CARGO", "content": "4-6 sentences. Cover yield trends, belly vs freighter capacity, demand drivers, key lane dynamics, and any e-commerce or pharma developments affecting air freight volumes." },
+    { "mode": "RAIL", "content": "4-6 sentences. Cover intermodal volumes, service reliability metrics, car loadings, and any labour or infrastructure developments at Class I railroads." },
+    { "mode": "MACRO & TRADE", "content": "5-7 sentences. Cover tariff developments, trade policy shifts, currency moves affecting freight costs, consumer demand signals, inventory cycle positioning, and any central bank actions with supply chain implications." }
   ],
-  "bottomLine": "One sentence. A clear directional call on where the freight market is heading. Specific and factual."
+  "bottomLine": "One sentence. A precise directional assessment of where the freight market is heading and why. Name the primary force driving it."
 }
 
-Only include sections where real news exists in the provided articles. Omit sections with no news. Each section should cover multiple developments, not just one. Return only the JSON.`;
+Only include sections where real, substantive news exists in the provided articles. Each section must cover multiple distinct developments. Return only the JSON.`;
 
     const controller = new AbortController();
     const timeout    = setTimeout(() => controller.abort(), 30000);
@@ -124,8 +125,8 @@ Only include sections where real news exists in the provided articles. Omit sect
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model:      'claude-haiku-4-5-20251001',
-        max_tokens: 1200,
+        model:      'claude-sonnet-4-6',
+        max_tokens: 2000,
         messages:   [{ role: 'user', content: prompt }],
       }),
       signal: controller.signal,
