@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getArticleBySlug } from '@/lib/rewriter';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
