@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Logo } from './Logo';
 import { Category, CATEGORIES } from '@/lib/feeds';
 
@@ -13,7 +14,9 @@ interface HeaderProps {
 
 export function Header({ active, onChange, search, onSearch }: HeaderProps) {
   const [showSearch, setShowSearch] = useState(false);
-  const navCats = Object.entries(CATEGORIES).filter(([k]) => k !== 'breaking' && k !== 'market-rates');
+  const pathname = usePathname();
+  const isHome   = pathname === '/';
+  const navCats  = Object.entries(CATEGORIES).filter(([k]) => k !== 'breaking' && k !== 'market-rates');
 
   return (
     <header style={{ borderBottom: '1px solid #e2e2e2', background: '#fff', position: 'sticky', top: 0, zIndex: 50, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
@@ -92,7 +95,7 @@ export function Header({ active, onChange, search, onSearch }: HeaderProps) {
               flexShrink: 0,
             };
 
-            return (
+            return isHome ? (
               <button
                 key={key}
                 onClick={() => onChange(key)}
@@ -100,6 +103,10 @@ export function Header({ active, onChange, search, onSearch }: HeaderProps) {
               >
                 {label}
               </button>
+            ) : (
+              <a key={key} href="/" style={{ ...baseStyle, textDecoration: 'none', display: 'inline-block' }}>
+                {label}
+              </a>
             );
           })}
 

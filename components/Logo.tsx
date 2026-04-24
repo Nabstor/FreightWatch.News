@@ -1,7 +1,7 @@
 'use client';
 export function Logo() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+    <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
       <svg viewBox="0 0 36 36" height="32" width="32" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="18" cy="18" r="15" stroke="#0a1628" strokeWidth="1.5"/>
         <circle cx="18" cy="18" r="9" stroke="#0a1628" strokeWidth="1" opacity="0.3"/>
@@ -19,6 +19,6 @@ export function Logo() {
           .news
         </span>
       </div>
-    </div>
+    </a>
   );
 }
