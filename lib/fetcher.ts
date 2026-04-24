@@ -1,6 +1,6 @@
 import { Article, Category, FEED_SOURCES } from './feeds';
 
-function hashStr(s: string): string {
+export function hashStr(s: string): string {
   let h = 0;
   for (let i = 0; i < s.length; i++) {
     h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
@@ -8,13 +8,13 @@ function hashStr(s: string): string {
   return Math.abs(h).toString(16).padStart(8, '0');
 }
 
-function parseDate(s: string): number {
+export function parseDate(s: string): number {
   if (!s) return 0;
   const d = new Date(s);
   return isNaN(d.getTime()) ? 0 : d.getTime();
 }
 
-function extractImage(item: Record<string, unknown>): string | undefined {
+export function extractImage(item: Record<string, unknown>): string | undefined {
   const enc = item['media:content'] as Record<string, unknown> | undefined;
   if (enc?.['@_url']) return enc['@_url'] as string;
   const thumb = item['media:thumbnail'] as Record<string, unknown> | undefined;
@@ -24,7 +24,7 @@ function extractImage(item: Record<string, unknown>): string | undefined {
   return undefined;
 }
 
-function titleKey(title: string): string {
+export function titleKey(title: string): string {
   return title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 60);
 }
 
@@ -47,11 +47,11 @@ async function fetchFeed(source: typeof FEED_SOURCES[0]): Promise<Article[]> {
       allowBooleanAttributes: true,
     });
     const parsed = parser.parse(xml);
-    const items: Record<string, unknown>[] =
-      parsed?.rss?.channel?.item ||
-      parsed?.feed?.entry ||
-      [];
-    if (!Array.isArray(items)) return [];
+    const raw = parsed?.rss?.channel?.item ?? parsed?.feed?.entry ?? [];
+    // fast-xml-parser returns a single item as an object, not an array — normalise it
+    const items: Record<string, unknown>[] = Array.isArray(raw)
+      ? raw
+      : (raw && typeof raw === 'object' ? [raw as Record<string, unknown>] : []);
 
     return items.slice(0, 15).map((item) => {
       const title    = String(item.title || '').replace(/<[^>]+>/g, '').trim();
@@ -92,6 +92,11 @@ async function fetchFeed(source: typeof FEED_SOURCES[0]): Promise<Article[]> {
 let _cache: Article[] | null = null;
 let _cacheAt = 0;
 const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
+
+export function clearArticleCache(): void {
+  _cache = null;
+  _cacheAt = 0;
+}
 
 export async function getCachedArticles(): Promise<Article[]> {
   if (_cache && Date.now() - _cacheAt < CACHE_TTL) return _cache;

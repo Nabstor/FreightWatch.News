@@ -13,7 +13,7 @@ export interface MarketIntelBrief {
   sources:     string[];
 }
 
-function getMondayOfWeek(): string {
+export function getMondayOfWeek(): string {
   const d = new Date();
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
@@ -22,7 +22,7 @@ function getMondayOfWeek(): string {
   return monday.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
-function getWeekKey(): string {
+export function getWeekKey(): string {
   const d = new Date();
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);

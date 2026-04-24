@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Article, CATEGORIES } from '@/lib/feeds';
 
-function timeAgo(d: string): string {
+export function timeAgo(d: string): string {
   const m = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
   if (m < 1) return 'Just now';
   if (m < 60) return `${m}m ago`;
