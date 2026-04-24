@@ -64,9 +64,8 @@ const metaStyle: React.CSSProperties = {
 // ── HERO ─────────────────────────────────────────────────────────
 export function HeroCard({ article }: { article: Article }) {
   return (
-    <a href={article.url} target="_blank" rel="noopener noreferrer" className="card-hover" style={{ display: 'block', textDecoration: 'none' }}>
+    <a href={article.url} className="card-hover" style={{ display: 'block', textDecoration: 'none' }}>
       <ArticleImage url={article.imageUrl} size="hero" title={article.title} />
-      <Tag category={article.category} isBreaking={article.isBreaking} />
       <div className="summary-hover" style={{ position: 'relative' }}>
         <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '22px', fontWeight: 700, lineHeight: 1.3, color: '#111', marginBottom: '8px' }}>
           {article.title}
@@ -91,7 +90,7 @@ export function HeroCard({ article }: { article: Article }) {
 // ── GRID ─────────────────────────────────────────────────────────
 export function GridCard({ article }: { article: Article }) {
   return (
-    <a href={article.url} target="_blank" rel="noopener noreferrer" className="card-hover" style={{ display: 'block', textDecoration: 'none' }}>
+    <a href={article.url} className="card-hover" style={{ display: 'block', textDecoration: 'none' }}>
       <ArticleImage url={article.imageUrl} size="grid" />
       <Tag category={article.category} isBreaking={article.isBreaking} />
       <div className="summary-hover" style={{ position: 'relative' }}>
@@ -119,7 +118,7 @@ export function ListRow({ article }: { article: Article }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <Tag category={article.category} isBreaking={article.isBreaking} />
         <div className="summary-hover" style={{ position: 'relative' }}>
-          <a href={article.url} target="_blank" rel="noopener noreferrer" className="card-hover" style={{ textDecoration: 'none' }}>
+          <a href={article.url} className="card-hover" style={{ textDecoration: 'none' }}>
             <h4 style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', fontWeight: 600, color: '#111', lineHeight: 1.4, marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {article.title}
             </h4>
@@ -146,7 +145,7 @@ export function SidebarItem({ article, showDivider = true }: { article: Article;
         {cat.label}
       </span>
       <div className="summary-hover" style={{ position: 'relative' }}>
-        <a href={article.url} target="_blank" rel="noopener noreferrer" className="card-hover" style={{ textDecoration: 'none' }}>
+        <a href={article.url} className="card-hover" style={{ textDecoration: 'none' }}>
           <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', fontWeight: 600, color: '#111', lineHeight: 1.4, marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
             {article.isBreaking && <span style={{ color: '#d0021b', marginRight: '4px' }}>●</span>}
             {article.title}
