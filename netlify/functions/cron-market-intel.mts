@@ -1,6 +1,6 @@
 import type { Config } from "@netlify/functions";
 
-// Runs every Monday at 9am EST = 14:00 UTC
+// Runs Monday and Thursday at 9am EST = 14:00 UTC
 export default async function handler() {
   const secret  = process.env.CRON_SECRET;
   const baseUrl = process.env.URL || 'https://freightwatch.news';
@@ -28,5 +28,5 @@ export default async function handler() {
 }
 
 export const config: Config = {
-  schedule: "0 14 * * 1", // Every Monday 9am EST = 14:00 UTC
+  schedule: "0 14 * * 1,4", // Monday + Thursday 9am EST = 14:00 UTC
 };

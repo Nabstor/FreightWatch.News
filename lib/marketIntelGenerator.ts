@@ -31,10 +31,48 @@ export function getWeekKey(): string {
   return monday.toISOString().slice(0, 10);
 }
 
-// Fetch CASS Freight Index from FRED (no key needed for public series)
+// ── Blobs persistence ─────────────────────────────────────────────
+
+const BLOB_KEY = 'market-intel-brief';
+
+async function readFromBlob(): Promise<MarketIntelBrief | null> {
+  try {
+    const { getStore } = await import('@netlify/blobs');
+    const store = getStore('freightwatch');
+    const raw   = await store.get(BLOB_KEY, { type: 'text' });
+    return raw ? JSON.parse(raw as string) : null;
+  } catch { return null; }
+}
+
+async function writeToBlob(brief: MarketIntelBrief): Promise<void> {
+  try {
+    const { getStore } = await import('@netlify/blobs');
+    const store = getStore('freightwatch');
+    await store.set(BLOB_KEY, JSON.stringify(brief));
+  } catch {}
+}
+
+// In-memory cache for same-instance hits
+let _brief: MarketIntelBrief | null = null;
+let _briefWeek: string | null = null;
+
+// GET path — reads from Blobs, never generates
+export async function getCachedMarketIntelBrief(): Promise<MarketIntelBrief | null> {
+  const thisWeek = getWeekKey();
+  if (_brief && _briefWeek === thisWeek) return _brief;
+  const blob = await readFromBlob();
+  if (blob) {
+    _brief     = blob;
+    _briefWeek = thisWeek;
+    return blob;
+  }
+  return null;
+}
+
+// ── FRED data fetchers ────────────────────────────────────────────
+
 async function fetchCASS(): Promise<string> {
   try {
-    // CASSSHIPIDX = CASS Freight Shipments Index
     const res = await fetch(
       'https://api.stlouisfed.org/fred/series/observations?series_id=CASSSHIPIDX&sort_order=desc&limit=2&file_type=json&api_key=e8bc39d5bc0247c4bc26ab43c2f28b57',
       { signal: AbortSignal.timeout(8000) }
@@ -47,7 +85,7 @@ async function fetchCASS(): Promise<string> {
       const currNum = parseFloat(obs[0].value);
       const chg = ((currNum - prev) / prev * 100).toFixed(1);
       const dir = currNum >= prev ? '▲' : '▼';
-      return `CASS Shipments Index: ${curr}  ${dir} ${Math.abs(parseFloat(chg))}% month-over-month (${obs[0].date})`;
+      return `CASS Shipments Index: ${curr}  ${dir} ${Math.abs(parseFloat(chg))}% MoM (${obs[0].date})`;
     }
   } catch {}
   return '';
@@ -55,7 +93,6 @@ async function fetchCASS(): Promise<string> {
 
 async function fetchCASSSPend(): Promise<string> {
   try {
-    // CASSEXPIDX = CASS Freight Expenditures Index
     const res = await fetch(
       'https://api.stlouisfed.org/fred/series/observations?series_id=CASSEXPIDX&sort_order=desc&limit=2&file_type=json&api_key=e8bc39d5bc0247c4bc26ab43c2f28b57',
       { signal: AbortSignal.timeout(8000) }
@@ -68,7 +105,7 @@ async function fetchCASSSPend(): Promise<string> {
       const currNum = parseFloat(obs[0].value);
       const chg = ((currNum - prev) / prev * 100).toFixed(1);
       const dir = currNum >= prev ? '▲' : '▼';
-      return `CASS Expenditures Index: ${curr}  ${dir} ${Math.abs(parseFloat(chg))}% month-over-month (${obs[0].date})`;
+      return `CASS Expenditures Index: ${curr}  ${dir} ${Math.abs(parseFloat(chg))}% MoM (${obs[0].date})`;
     }
   } catch {}
   return '';
@@ -85,9 +122,9 @@ async function fetchDiesel(): Promise<string> {
     if (obs.length >= 2) {
       const curr = parseFloat(obs[0].value).toFixed(3);
       const prev = parseFloat(obs[1].value);
-      const chg = (parseFloat(obs[0].value) - prev).toFixed(3);
-      const dir = parseFloat(chg) >= 0 ? '▲' : '▼';
-      return `US Diesel: $${curr}/gal  ${dir} $${Math.abs(parseFloat(chg)).toFixed(3)} week-over-week`;
+      const chg  = (parseFloat(obs[0].value) - prev).toFixed(3);
+      const dir  = parseFloat(chg) >= 0 ? '▲' : '▼';
+      return `US Diesel: $${curr}/gal  ${dir} $${Math.abs(parseFloat(chg)).toFixed(3)} WoW`;
     }
   } catch {}
   return '';
@@ -103,8 +140,8 @@ async function fetchWTI(): Promise<string> {
     const obs = (json?.observations || []).filter((o: { value: string }) => o.value !== '.');
     if (obs.length >= 2) {
       const curr = parseFloat(obs[0].value).toFixed(2);
-      const chg = (parseFloat(obs[0].value) - parseFloat(obs[1].value)).toFixed(2);
-      const dir = parseFloat(chg) >= 0 ? '▲' : '▼';
+      const chg  = (parseFloat(obs[0].value) - parseFloat(obs[1].value)).toFixed(2);
+      const dir  = parseFloat(chg) >= 0 ? '▲' : '▼';
       return `WTI Crude: $${curr}/bbl  ${dir} $${Math.abs(parseFloat(chg)).toFixed(2)}`;
     }
   } catch {}
@@ -121,23 +158,15 @@ async function fetchBrent(): Promise<string> {
     const obs = (json?.observations || []).filter((o: { value: string }) => o.value !== '.');
     if (obs.length >= 2) {
       const curr = parseFloat(obs[0].value).toFixed(2);
-      const chg = (parseFloat(obs[0].value) - parseFloat(obs[1].value)).toFixed(2);
-      const dir = parseFloat(chg) >= 0 ? '▲' : '▼';
+      const chg  = (parseFloat(obs[0].value) - parseFloat(obs[1].value)).toFixed(2);
+      const dir  = parseFloat(chg) >= 0 ? '▲' : '▼';
       return `Brent Crude: $${curr}/bbl  ${dir} $${Math.abs(parseFloat(chg)).toFixed(2)}`;
     }
   } catch {}
   return '';
 }
 
-// In-memory weekly cache
-let _brief: MarketIntelBrief | null = null;
-let _briefWeek: string | null = null;
-
-export async function getCachedMarketIntelBrief(): Promise<MarketIntelBrief | null> {
-  const thisWeek = getWeekKey();
-  if (_brief && _briefWeek === thisWeek) return _brief;
-  return generateMarketIntelBrief();
-}
+// ── Generation (cron only) ────────────────────────────────────────
 
 export async function generateMarketIntelBrief(): Promise<MarketIntelBrief | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -146,85 +175,109 @@ export async function generateMarketIntelBrief(): Promise<MarketIntelBrief | nul
   try {
     const articles = await getCachedArticles();
 
-    // Priority sources for market intel
-    const intelSources = ['FreightWaves', 'DAT Freight', 'Journal of Commerce', 'JOC', 'CNBC', 'Bloomberg', 'Freightos', 'Xeneta', 'The Loadstar', 'Supply Chain Dive'];
-    const relevant = articles.filter(a => intelSources.includes(a.source));
-    const sourceArticles = relevant.length >= 5 ? relevant.slice(0, 20) : articles.slice(0, 20);
+    const intelSources = ['FreightWaves', 'DAT Freight', 'Journal of Commerce', 'JOC', 'CNBC', 'Bloomberg', 'Freightos', 'Xeneta', 'The Loadstar', 'Supply Chain Dive', 'Trucking Dive', 'Maritime Executive'];
+    const relevant     = articles.filter(a => intelSources.includes(a.source));
+    const sourceArticles = relevant.length >= 5 ? relevant.slice(0, 25) : articles.slice(0, 25);
 
-    const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-    const year  = new Date().getFullYear();
+    const today  = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const year   = new Date().getFullYear();
     const weekOf = getMondayOfWeek();
 
-    // Fetch live FRED data in parallel
     const [cassShip, cassSpend, diesel, wti, brent] = await Promise.all([
-      fetchCASS(),
-      fetchCASSSPend(),
-      fetchDiesel(),
-      fetchWTI(),
-      fetchBrent(),
+      fetchCASS(), fetchCASSSPend(), fetchDiesel(), fetchWTI(), fetchBrent(),
     ]);
 
     const liveData = [cassShip, cassSpend, diesel, wti, brent].filter(Boolean).join('\n');
 
     const storiesList = sourceArticles
-      .map((a, i) => `${i + 1}. [${a.source}] ${a.title}${a.summary ? `\n   ${a.summary.slice(0, 200)}` : ''}`)
+      .map((a, i) => `${i + 1}. [${a.source}] ${a.title}${a.summary ? `\n   ${a.summary.slice(0, 250)}` : ''}`)
       .join('\n\n');
 
     const sources = Array.from(new Set(sourceArticles.map(a => a.source))).slice(0, 6);
 
-    const prompt = `You are a senior freight market analyst writing a weekly intelligence brief for Freightwatch.news. Today is ${today}. The year is ${year}.
+    const prompt = `You are a managing director at a tier-1 investment bank covering freight, logistics, and transportation markets. Your twice-weekly intelligence brief is read by CFOs, portfolio managers, hedge fund analysts, and logistics executives who make multi-million dollar decisions based on your calls. Today is ${today}. The year is ${year}.
 
-Synthesize the articles below into sharp, useful bullet points for freight executives. If you don't have a specific number, describe the direction and market context instead — never write "data pending".
+This is not a news summary. This is proprietary market intelligence. Give readers the interpretation, the implication, and the call — not the headline.
 
-RULES:
-- Base every bullet on what the articles actually report
-- Use ▲ for up trends, ▼ for down trends, → for stable
-- Flag significant developments with ⚠️
-- Name specific carriers, routes, or companies when mentioned in the articles
-- If no number is available, describe the trend clearly (e.g. "Spot rates trending higher as capacity tightens")
-- Do NOT mention AI, algorithms, or how this brief was created
-- The year is ${year} — do not reference any other year
+ANALYTICAL STANDARDS:
+- Lead every bullet with the market signal, not the event. What does it MEAN, not what happened.
+- Every major section must contain a directional call: BULLISH, BEARISH, or NEUTRAL with a one-line rationale.
+- Connect micro data to macro implications. A diesel price move is a carrier margin event. A port delay is an inventory cost. A blank sailing is a rate signal.
+- Identify where the current data diverges from consensus. What is the market underpricing or overpricing?
+- Cycle awareness: are we bottoming, recovering, peaking, or in oversupply? Name it explicitly.
+- Quantify impact wherever possible. If diesel moves $0.10/gal, that is ~$5,200/year per truck in fuel cost.
+- Flag which carriers, shippers, or operators are structurally exposed to each development.
+- Use ▲ for upward pressure, ▼ for downward pressure, → for stable/neutral, ⚠️ for high-conviction risk flags.
+- Never write "data pending" or filler. If data is absent, make the call based on what you know about the cycle.
+- No mention of AI, algorithms, data feeds, or how this brief is produced.
 
-LIVE MARKET DATA (use these exact figures where available):
-${liveData}
+LIVE MARKET DATA:
+${liveData || 'Live data unavailable this cycle — use directional analysis from articles.'}
 
-SOURCE ARTICLES for week of ${weekOf}:
+SOURCE INTELLIGENCE for week of ${weekOf}:
 ${storiesList}
 
-Return JSON with this exact structure:
+Return JSON with this exact structure — bullets should be 1-2 tight sentences each, analyst-grade:
 {
   "sections": [
     {
       "title": "TRUCKLOAD MARKET",
-      "bullets": ["Spot rate direction and capacity conditions based on articles", "Load-to-truck ratio trend or carrier activity", "Notable lane, volume, or demand development"]
+      "bullets": [
+        "▲/▼/→ CALL: [directional call with one-line rationale based on rate and capacity data]",
+        "[Spot vs contract rate spread analysis and what it signals about cycle positioning]",
+        "[Load-to-truck ratio or capacity utilisation signal and carrier pricing power implication]",
+        "[One specific carrier, broker, or lane development with a forward-looking read]"
+      ]
     },
     {
       "title": "OCEAN & PORTS",
-      "bullets": ["Container rate direction or shipping conditions", "Port congestion, vessel delays, or shipping line news", "Trade lane or equipment availability development"]
+      "bullets": [
+        "▲/▼/→ CALL: [directional call on container rates and shipping conditions]",
+        "[Trans-Pacific or Asia-Europe rate move and blank sailing/vessel supply context]",
+        "[Port congestion or equipment repositioning signal and its inventory cost implication]",
+        "[Trade lane or carrier alliance development with 4-week forward read]"
+      ]
     },
     {
       "title": "AIR CARGO",
-      "bullets": ["Air cargo demand or capacity conditions", "Notable air freight development from this week", "E-commerce or express freight trend"]
+      "bullets": [
+        "▲/▼/→ CALL: [directional call on air cargo yield and demand]",
+        "[E-commerce, pharma, or tech supply chain driver of air freight demand]",
+        "[Belly vs freighter capacity dynamic and its yield implication]"
+      ]
     },
     {
       "title": "FUEL & ENERGY",
-      "bullets": ["Diesel price direction and surcharge impact on carriers", "Crude oil market conditions and freight cost implications", "Energy disruption or supply development affecting logistics"]
+      "bullets": [
+        "[Diesel price level with weekly change — annualised fleet cost impact for a 100-truck carrier]",
+        "[Crude oil signal and what the forward curve implies for diesel in 30-60 days]",
+        "⚠️ [Energy supply risk or refinery/geopolitical development with freight cost exposure]"
+      ]
     },
     {
       "title": "MACRO & TRADE",
-      "bullets": ["Tariff, trade policy, or economic conditions affecting freight volumes", "Consumer demand or inventory trend impacting shipments", "Geopolitical or regulatory development with logistics implications"]
+      "bullets": [
+        "▲/▼/→ CALL: [directional call on freight demand from macro/trade conditions]",
+        "[Tariff or trade policy development with specific volume or lane impact quantified]",
+        "[Consumer demand or inventory cycle signal and what it means for inbound freight volumes]",
+        "[Currency, interest rate, or economic indicator with direct freight market implication]"
+      ]
     },
     {
       "title": "WEEK IN FOCUS",
-      "bullets": ["The single most important freight development this week", "Second most significant development", "Third development or one to watch next week"]
+      "bullets": [
+        "⚠️ [The single highest-conviction call this week — the thing the market is underpricing]",
+        "[Second key development with specific winner/loser identification]",
+        "[One to watch: the leading indicator or catalyst that will matter most in the next 2 weeks]"
+      ]
     }
   ]
 }
 
-Return only valid JSON, no markdown, no backticks.`;
+Every bullet must deliver insight a freight executive or analyst cannot get from reading headlines. Return only valid JSON, no markdown, no backticks.`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
+    const timeout    = setTimeout(() => controller.abort(), 45000);
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -234,8 +287,8 @@ Return only valid JSON, no markdown, no backticks.`;
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model:      'claude-haiku-4-5-20251001',
-        max_tokens: 1500,
+        model:      'claude-sonnet-4-6',
+        max_tokens: 2500,
         messages:   [{ role: 'user', content: prompt }],
       }),
       signal: controller.signal,
@@ -258,6 +311,8 @@ Return only valid JSON, no markdown, no backticks.`;
 
     _brief     = brief;
     _briefWeek = getWeekKey();
+
+    await writeToBlob(brief);
 
     return brief;
   } catch (e) {
