@@ -28,7 +28,7 @@ export function buildCuratedFeed(articles: Article[]): Article[] {
   const result: Article[] = [];
   const usedTitles = new Set<string>();
 
-  for (let round = 0; round < 5; round++) {
+  for (let round = 0; round < 3; round++) {
     for (const cat of cats) {
       const catArticles = articles.filter(a => a.category === cat);
       const pick = catArticles.find(a => {
@@ -43,7 +43,7 @@ export function buildCuratedFeed(articles: Article[]): Article[] {
   }
 
   for (const a of articles) {
-    if (result.length >= 80) break;
+    if (result.length >= 30) break;
     const k = titleKey(a.title);
     if (!usedTitles.has(k)) {
       result.push(a);
