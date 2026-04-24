@@ -45,18 +45,28 @@ describe('POST /api/subscribe — email validation', () => {
     expect(res.status).toBe(200);
   });
 
-  it('documents the weak validation: bare "@" passes the current check', async () => {
-    // This test documents a known limitation: "@" alone satisfies email.includes('@').
-    // It is intentionally NOT asserting 400 here — it asserts the current (weak) behavior
-    // so any future strengthening of validation will be caught.
-    process.env.BREVO_API_KEY = 'test-key';
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
-
+  it('returns 400 for a bare "@" (no local part or domain)', async () => {
     const { POST } = await import('@/app/api/subscribe/route');
     const res = await POST(makeRequest({ email: '@' }));
-    // Current code passes this through to addSubscriber — status will be 200 or 500
-    // depending on Brevo's response. The point is it's NOT rejected at validation.
-    expect(res.status).not.toBe(400);
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for an email with no domain (user@ only)', async () => {
+    const { POST } = await import('@/app/api/subscribe/route');
+    const res = await POST(makeRequest({ email: 'user@' }));
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for an email with no TLD (missing dot in domain)', async () => {
+    const { POST } = await import('@/app/api/subscribe/route');
+    const res = await POST(makeRequest({ email: 'user@domain' }));
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for an email with spaces', async () => {
+    const { POST } = await import('@/app/api/subscribe/route');
+    const res = await POST(makeRequest({ email: 'user name@example.com' }));
+    expect(res.status).toBe(400);
   });
 
   it('returns 500 when addSubscriber fails', async () => {

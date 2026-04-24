@@ -13,7 +13,7 @@ function titleKey(t: string) {
   return t.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 60);
 }
 
-function dedupe(articles: Article[]): Article[] {
+export function dedupe(articles: Article[]): Article[] {
   const seen = new Set<string>();
   return articles.filter(a => {
     const k = titleKey(a.title);
@@ -23,7 +23,7 @@ function dedupe(articles: Article[]): Article[] {
   });
 }
 
-function buildCuratedFeed(articles: Article[]): Article[] {
+export function buildCuratedFeed(articles: Article[]): Article[] {
   const cats: Category[] = ['breaking', 'trucking', 'ports', 'air-cargo', 'rail', 'market-rates', 'world-economy'];
   const result: Article[] = [];
   const usedTitles = new Set<string>();
