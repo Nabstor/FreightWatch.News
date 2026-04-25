@@ -115,7 +115,7 @@ Return only valid JSON, no markdown, no backticks:
 Only include sections where real, substantive news exists in the provided articles. Each section must cover multiple distinct developments. Return only the JSON.`;
 
     const controller = new AbortController();
-    const timeout    = setTimeout(() => controller.abort(), 30000);
+    const timeout    = setTimeout(() => controller.abort(), 55000);
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

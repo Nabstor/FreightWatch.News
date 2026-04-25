@@ -36,7 +36,9 @@ export async function getCachedReport(): Promise<AtlasReport | null> {
     _reportDate = today;
     return blob.report;
   }
-  return forceRefreshReport();
+  // Do NOT auto-generate on user GET requests — generation times out on serverless functions.
+  // The cron function generates the report directly via forceRefreshReport().
+  return null;
 }
 
 export async function forceRefreshReport(): Promise<AtlasReport | null> {

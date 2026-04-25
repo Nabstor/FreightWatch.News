@@ -1,4 +1,5 @@
 import type { Config } from "@netlify/functions";
+import { forceRefreshReport } from "../../lib/atlas";
 
 // Runs daily at 9am CST = 15:00 UTC
 export default async function handler() {
@@ -15,11 +16,11 @@ export default async function handler() {
     // 2. Pre-warm market data
     await fetch(`${baseUrl}/api/markets`, { method: 'POST' });
 
-    // 3. Force-generate a fresh daily analysis report
-    await fetch(`${baseUrl}/api/atlas`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${secret}` },
-    });
+    // 3. Generate the daily analysis report directly — avoids the Next.js serverless
+    //    function timeout that kills HTTP calls to /api/atlas after 10-26 seconds.
+    //    Scheduled functions can run up to 15 minutes.
+    const report = await forceRefreshReport();
+    console.log('[cron-digest] Atlas report generated:', report ? report.headline : 'FAILED');
 
     // 4. Send the daily analysis email
     const res  = await fetch(`${baseUrl}/api/analysis-email`, {
@@ -29,7 +30,7 @@ export default async function handler() {
     const data = await res.json();
     console.log('[cron-digest] Daily brief sent:', data);
 
-    return { statusCode: 200, body: JSON.stringify(data) };
+    return { statusCode: 200, body: JSON.stringify({ ...data, atlasGenerated: !!report }) };
   } catch (err) {
     console.error('[cron-digest] Failed:', err);
     return { statusCode: 500, body: 'Cron failed' };
