@@ -72,6 +72,7 @@ export const FEED_SOURCES: FeedSource[] = [
   { url: 'https://feeds.a.dj.com/rss/RSSWorldNews.xml',                                  source: 'WSJ',                    category: 'world-economy', trusted: false },
   { url: 'https://www.cnbc.com/id/10000664/device/rss/rss.html',                         source: 'CNBC Markets',           category: 'world-economy', trusted: false },
   { url: 'https://www.economist.com/finance-and-economics/rss.xml',                      source: 'The Economist',          category: 'world-economy', trusted: false },
+  { url: 'https://feeds.npr.org/1006/rss.xml',                                           source: 'NPR Economy',            category: 'world-economy', trusted: false },
 
 ];
 
