@@ -6,8 +6,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const report = await getCachedReport();
-  if (!report) return NextResponse.json({ reports: [], total: 0 });
-  return NextResponse.json({ reports: [report], total: 1 });
+  if (report) return NextResponse.json({ reports: [report], total: 1 });
+
+  // No report cached — kick off background generation and tell client to poll.
+  const baseUrl = process.env.URL || 'https://freightwatch.news';
+  fetch(`${baseUrl}/.netlify/functions/atlas-generate-bg`, { method: 'POST' }).catch(() => {});
+
+  return NextResponse.json({ reports: [], total: 0, generating: true });
 }
 
 export async function POST(req: NextRequest) {
