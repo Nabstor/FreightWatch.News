@@ -122,17 +122,46 @@ export async function refreshArticles(): Promise<Article[]> {
 
   // Keyword filter — reject articles that don't match their category
   const CATEGORY_KEYWORDS: Record<string, string[]> = {
-    'ports':     ['port', 'ship', 'shipping', 'maritime', 'ocean', 'container', 'vessel', 'cargo ship', 'freight rate', 'liner', 'terminal', 'harbor', 'harbour', 'sea freight', 'suez', 'panama', 'strait', 'maersk', 'msc', 'cosco', 'cma cgm'],
+    'ports':     ['port', 'ship', 'shipping', 'maritime', 'ocean', 'container ship', 'vessel', 'cargo ship', 'freight rate', 'liner', 'container terminal', 'harbor', 'harbour', 'sea freight', 'suez', 'panama canal', 'strait', 'maersk', 'msc', 'cosco', 'cma cgm', 'ocean carrier', 'seaport', 'port authority'],
     'air-cargo': ['air cargo', 'air freight', 'freighter', 'aviation cargo', 'cargo airline', 'iata', 'belly cargo', 'air transport', 'cargo plane', 'air shipment', 'fedex', 'ups air', 'dhl air', 'airbridge'],
-    'trucking':  ['truck', 'trucking', 'carrier', 'ltl', 'truckload', 'driver', 'freight', 'load', 'hauling', 'flatbed', 'dry van', 'reefer', 'less-than-truckload', 'owner-operator', 'fleet'],
-    'rail':      ['rail', 'railroad', 'intermodal', 'train', 'locomotive', 'freight rail', 'railway', 'csx', 'union pacific', 'bnsf', 'norfolk southern'],
+    'trucking':  ['truck', 'trucking', 'truckload', 'ltl', 'driver', 'drayage', 'hauling', 'flatbed', 'dry van', 'reefer', 'less-than-truckload', 'owner-operator', 'fleet'],
+    'rail':      ['railroad', 'freight rail', 'railway', 'freight train', 'locomotive', 'rail network', 'intermodal rail', 'rail intermodal', 'csx', 'union pacific', 'bnsf', 'norfolk southern', 'amtrak freight'],
   };
 
-  const filtered = deduped.filter(a => {
+  const keywordFiltered = deduped.filter(a => {
     const keywords = CATEGORY_KEYWORDS[a.category];
     if (!keywords) return true; // no filter for breaking, market-rates, world-economy
     const text = (a.title + ' ' + a.summary).toLowerCase();
     return keywords.some(kw => text.includes(kw));
+  });
+
+  // Reclassify articles where the title strongly signals a different category than the source assigned.
+  // Primary protection: rail-sourced articles about port operations, and vice versa.
+  const RECLASSIFY_RULES: { from: Category; to: Category; titleSignals: string[] }[] = [
+    {
+      from: 'rail', to: 'ports',
+      titleSignals: ['port of ', 'port authority', 'container terminal', 'container ship', 'maritime port',
+                     'ocean freight', 'seaport', 'sea port', 'harbor', 'harbour', 'vessel', 'ocean carrier',
+                     'shipping line', 'shipping terminal', 'cargo ship'],
+    },
+    {
+      from: 'trucking', to: 'ports',
+      titleSignals: ['port of ', 'container terminal', 'maritime', 'ocean freight', 'shipping line', 'vessel', 'cargo ship'],
+    },
+    {
+      from: 'ports', to: 'rail',
+      titleSignals: ['railroad ', 'freight train', 'locomotive', 'rail network', 'csx ', 'bnsf ', 'union pacific ', 'norfolk southern '],
+    },
+  ];
+
+  const filtered = keywordFiltered.map(a => {
+    const title = a.title.toLowerCase();
+    for (const rule of RECLASSIFY_RULES) {
+      if (a.category === rule.from && rule.titleSignals.some(s => title.includes(s))) {
+        return { ...a, category: rule.to as Category };
+      }
+    }
+    return a;
   });
 
   // Rank by importance + recency + source diversity
