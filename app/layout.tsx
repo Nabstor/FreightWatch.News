@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     images: [{
-      url: '/og-image.svg',
+      url: '/og-image.png',
       width: 1200,
       height: 630,
       alt: 'Freightwatch.news — Freight & Logistics Intelligence',
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Freightwatch.news — Freight & Logistics Intelligence',
     description: 'Daily freight market intelligence. Trucking, ports, air cargo, rail and world economy news for logistics professionals.',
-    images: ['/og-image.svg'],
+    images: ['/og-image.png'],
   },
   alternates: {
     canonical: 'https://freightwatch.news',
@@ -78,7 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               foundingDate: '2024',
               logo: {
                 '@type': 'ImageObject',
-                url: 'https://freightwatch.news/og-image.svg',
+                url: 'https://freightwatch.news/og-image.png',
               },
               sameAs: ['https://freightwatch.news'],
             }),
