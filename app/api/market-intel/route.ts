@@ -6,8 +6,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const brief = await getCachedMarketIntelBrief();
-  if (!brief) return NextResponse.json({ brief: null });
-  return NextResponse.json({ brief });
+  if (brief) return NextResponse.json({ brief });
+
+  // No cached brief — kick off background generation and tell client to poll.
+  const baseUrl = process.env.URL || 'https://freightwatch.news';
+  fetch(`${baseUrl}/.netlify/functions/market-intel-generate-bg`, { method: 'POST' }).catch(() => {});
+
+  return NextResponse.json({ brief: null, generating: true });
 }
 
 export async function POST(req: NextRequest) {

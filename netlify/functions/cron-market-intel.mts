@@ -1,26 +1,16 @@
 import type { Config } from "@netlify/functions";
+import { generateMarketIntelBrief } from "../../lib/marketIntelGenerator";
 
 // Runs Monday and Thursday at 9am EST = 14:00 UTC
 export default async function handler() {
-  const secret  = process.env.CRON_SECRET;
-  const baseUrl = process.env.URL || 'https://freightwatch.news';
-
   try {
-    // First refresh articles
-    await fetch(`${baseUrl}/api/cron`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${secret}` },
-    });
+    // Generate directly — avoids the Next.js serverless timeout that kills
+    // HTTP calls to /api/market-intel after 10-26 seconds.
+    // Scheduled functions can run up to 15 minutes.
+    const brief = await generateMarketIntelBrief();
+    console.log('[market-intel cron] Generated:', brief ? brief.weekOf : 'FAILED');
 
-    // Generate weekly market intel brief
-    const res  = await fetch(`${baseUrl}/api/market-intel`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${secret}` },
-    });
-    const data = await res.json();
-    console.log('[market-intel cron] Generated:', data?.brief?.weekOf);
-
-    return { statusCode: 200, body: JSON.stringify(data) };
+    return { statusCode: 200, body: JSON.stringify({ weekOf: brief?.weekOf }) };
   } catch (err) {
     console.error('[market-intel cron] Failed:', err);
     return { statusCode: 500, body: 'Market intel cron failed' };

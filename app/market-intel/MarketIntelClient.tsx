@@ -33,17 +33,18 @@ function formatBullet(text: string) {
 }
 
 export default function MarketIntelPage() {
-  const [brief, setBrief]     = useState<Brief | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
-  const [active, setActive]   = useState<any>('all');
+  const [brief, setBrief]           = useState<Brief | null>(null);
+  const [loading, setLoading]       = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError]           = useState('');
+  const [active, setActive]         = useState<any>('all');
 
-  useEffect(() => {
-    async function load() {
-      try {
-        // Cache by calendar date — ensures Monday and Thursday updates are picked up
-        const todayKey = new Date().toISOString().slice(0, 10);
-        const cached   = localStorage.getItem('fw_market_intel_v3');
+  async function load(silent = false) {
+    if (!silent) setLoading(true);
+    try {
+      const todayKey = new Date().toISOString().slice(0, 10);
+      if (!silent) {
+        const cached = localStorage.getItem('fw_market_intel_v3');
         if (cached) {
           const { date, data } = JSON.parse(cached);
           if (date === todayKey && data) {
@@ -52,23 +53,34 @@ export default function MarketIntelPage() {
             return;
           }
         }
-
-        const res  = await fetch('/api/market-intel');
-        const json = await res.json();
-        if (json.brief) {
-          setBrief(json.brief);
-          localStorage.setItem('fw_market_intel_v3', JSON.stringify({ date: todayKey, data: json.brief }));
-        } else {
-          setError('Next brief publishes Monday and Thursday at 9am EST.');
-        }
-      } catch {
-        setError('Failed to load market intelligence.');
-      } finally {
-        setLoading(false);
       }
+
+      const res  = await fetch('/api/market-intel');
+      const json = await res.json();
+      if (json.brief) {
+        setBrief(json.brief);
+        setGenerating(false);
+        localStorage.setItem('fw_market_intel_v3', JSON.stringify({ date: todayKey, data: json.brief }));
+      } else if (json.generating) {
+        setGenerating(true);
+      } else {
+        setError('Next brief publishes Monday and Thursday at 9am EST.');
+      }
+    } catch {
+      setError('Failed to load market intelligence.');
+    } finally {
+      setLoading(false);
     }
-    load();
-  }, []);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  // Poll every 25 seconds while generating
+  useEffect(() => {
+    if (!generating) return;
+    const id = setInterval(() => load(true), 25000);
+    return () => clearInterval(id);
+  }, [generating]);
 
   const updatedDate = brief
     ? new Date(brief.generatedAt).toLocaleDateString('en-US', {
@@ -107,6 +119,11 @@ export default function MarketIntelPage() {
           {loading ? (
             <div style={{ padding: '60px 0', textAlign: 'center' }}>
               <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '11px', color: '#999', letterSpacing: '0.1em' }}>Loading...</p>
+            </div>
+          ) : generating ? (
+            <div style={{ padding: '40px', background: '#f8f8f8', border: '1px solid #e2e2e2', textAlign: 'center' }}>
+              <p style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: '11px', color: '#0a1628', letterSpacing: '0.1em', marginBottom: '8px' }}>GENERATING BRIEF</p>
+              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#666' }}>Your market intelligence brief is being prepared. This page will update automatically.</p>
             </div>
           ) : error ? (
             <div style={{ padding: '40px', background: '#f8f8f8', border: '1px solid #e2e2e2', textAlign: 'center' }}>
