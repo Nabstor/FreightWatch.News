@@ -111,7 +111,7 @@ export function Header({ active, onChange, search, onSearch }: HeaderProps) {
             );
           })}
 
-          {/* Analysis — last tab, links to its own page */}
+          {/* Analysis — links to its own page */}
           <a
             href="/analysis"
             style={{
@@ -130,6 +130,27 @@ export function Header({ active, onChange, search, onSearch }: HeaderProps) {
             }}
           >
             Analysis
+          </a>
+
+          {/* Q. Earnings — links to its own page */}
+          <a
+            href="/earnings"
+            style={{
+              padding: '9px 12px',
+              fontSize: '11px',
+              fontWeight: 700,
+              fontFamily: "'Inter', sans-serif",
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              borderBottom: '2px solid transparent',
+              color: '#888',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              textDecoration: 'none',
+              display: 'inline-block',
+            }}
+          >
+            Q. Earnings
           </a>
         </div>
       </div>
