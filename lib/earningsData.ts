@@ -16,7 +16,7 @@ export interface EarningsEntry {
   notes:         string;   // one-line context for freight professionals
 }
 
-// ── Top 10 Logistics & Freight Carriers — Q4 2024 ───────────────────────────
+// ── Top 10 Logistics & Freight Carriers — Q4 2024, sorted by revenue desc ───
 export const EARNINGS_DATA: EarningsEntry[] = [
   {
     name:         'United Parcel Service',
@@ -47,20 +47,6 @@ export const EARNINGS_DATA: EarningsEntry[] = [
     notes:        'DRIVE cost savings program tracking ahead of target; freight spin-off on track.',
   },
   {
-    name:         'Old Dominion Freight Line',
-    ticker:       'ODFL',
-    exchange:     'NASDAQ',
-    mode:         'LTL',
-    quarter:      'Q4 2024',
-    revenue:      '$1.47B',
-    revenueYoY:   -5.6,
-    eps:          '$1.27',
-    epsEstimate:  '$1.24',
-    beat:         true,
-    nextEarnings: 'Apr 2025',
-    notes:        'LTL demand softness persists; OR ratio held at 72.8% — industry-leading.',
-  },
-  {
     name:         'C.H. Robinson Worldwide',
     ticker:       'CHRW',
     exchange:     'NASDAQ',
@@ -87,6 +73,20 @@ export const EARNINGS_DATA: EarningsEntry[] = [
     beat:         false,
     nextEarnings: 'Apr 2025',
     notes:        'Intermodal load growth positive but revenue per load under pressure.',
+  },
+  {
+    name:         'Expeditors International',
+    ticker:       'EXPD',
+    exchange:     'NASDAQ',
+    mode:         'Freight Forwarding',
+    quarter:      'Q4 2024',
+    revenue:      '$2.6B',
+    revenueYoY:   +14.3,
+    eps:          '$1.55',
+    epsEstimate:  '$1.49',
+    beat:         true,
+    nextEarnings: 'May 2025',
+    notes:        'Ocean and air forwarding volumes surging on Red Sea and tariff pull-forward.',
   },
   {
     name:         'XPO Inc.',
@@ -117,32 +117,18 @@ export const EARNINGS_DATA: EarningsEntry[] = [
     notes:        'Truckload rate environment remains challenged; LTL integration progressing.',
   },
   {
-    name:         'Hub Group Inc.',
-    ticker:       'HUBG',
+    name:         'Old Dominion Freight Line',
+    ticker:       'ODFL',
     exchange:     'NASDAQ',
-    mode:         'Intermodal / Drayage',
+    mode:         'LTL',
     quarter:      'Q4 2024',
-    revenue:      '$1.0B',
-    revenueYoY:   -8.3,
-    eps:          '$0.62',
-    epsEstimate:  '$0.58',
+    revenue:      '$1.47B',
+    revenueYoY:   -5.6,
+    eps:          '$1.27',
+    epsEstimate:  '$1.24',
     beat:         true,
     nextEarnings: 'Apr 2025',
-    notes:        'Intermodal softness weighing on volumes; drayage and logistics services partially offsetting.',
-  },
-  {
-    name:         'Expeditors International',
-    ticker:       'EXPD',
-    exchange:     'NASDAQ',
-    mode:         'Freight Forwarding',
-    quarter:      'Q4 2024',
-    revenue:      '$2.6B',
-    revenueYoY:   +14.3,
-    eps:          '$1.55',
-    epsEstimate:  '$1.49',
-    beat:         true,
-    nextEarnings: 'May 2025',
-    notes:        'Ocean and air forwarding volumes surging on Red Sea and tariff pull-forward.',
+    notes:        'LTL demand softness persists; OR ratio held at 72.8% — industry-leading.',
   },
   {
     name:         'Landstar System',
@@ -157,6 +143,20 @@ export const EARNINGS_DATA: EarningsEntry[] = [
     beat:         true,
     nextEarnings: 'Apr 2025',
     notes:        'Agent-based model holding margins despite soft spot market conditions.',
+  },
+  {
+    name:         'Hub Group Inc.',
+    ticker:       'HUBG',
+    exchange:     'NASDAQ',
+    mode:         'Intermodal / Drayage',
+    quarter:      'Q4 2024',
+    revenue:      '$1.0B',
+    revenueYoY:   -8.3,
+    eps:          '$0.62',
+    epsEstimate:  '$0.58',
+    beat:         true,
+    nextEarnings: 'Apr 2025',
+    notes:        'Intermodal softness weighing on volumes; drayage and logistics services partially offsetting.',
   },
 ];
 
